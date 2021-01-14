@@ -2,76 +2,62 @@ import os
 
 import dash
 import dash_core_components as dcc
-import dash_html_componenats as html
+import dash_html_components as html
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
+import pickle as pkl
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
 
-
-# assume you have a "long-form" data frame
-# see https://plotly.com/python/px-arguments/ for more options
-#df = pd.DataFrame({
-#    "Fruit": ["Apples", "Oranges", "Bananas", "Apples", "Oranges", "Bananas"],
-#    "Amount": [4, 1, 2, 2, 4, 5],
-#    "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
-#})
-
-
-
-# THis is preprocessing , it can be done before and the file would load wuickly
-
-df_nat = pd.read_csv('data/nat2019.csv', ';')
-df_nat['prenoms_s']=[str(df_nat.preusuel.iloc[i])+' - ♂' if df_nat.sexe.iloc[i]==1 else str(df_nat.preusuel.iloc[i])+' - ♀' for i in df_nat.index]  
-prenoms_sel = [dict(label=prenom, value=prenom) for prenom in df_nat.prenoms_s.unique()]
-#df_dpt = pd.read_csv('dpt2019.csv', ';')
+dict_prénoms = pkl.load(open('data/dict_prenoms.pkl', 'rb'))
+df_nat = pd.read_feather('data/df_nat.feather')
+# Suppression des prénoms trop rares :
+masque_prénoms_rares = (
+    df_nat.prénoms_s == '_PRENOMS_RARES - ♂') | (df_nat.prénoms_s == '_PRENOMS_RARES - ♀')
+# drop des prénoms rares
+df_nat = df_nat.drop(df_nat[masque_prénoms_rares].index)
 
 app.layout = html.Div(children=[
-    html.H1(children='Hello Dash'),
+    html.H1(children='Naissances France'),
 
-    html.Div(children='''
-        Dash: A web application framework for Python.
+    html.Div(id='sous-titre', children='''
+        Fréquence des prénoms de naissance en France de 1900 à nos jours
     '''),
-    #html.Div(["Prénoms: ",
-    #          dcc.Input(id='my-input', value='CAMILLE', type='text')]),
     dcc.Dropdown(
-        id='dropdown-prenoms',
-        options=prenoms_sel,
-        value=['ALIX - ♂'],
+        id='dropdown-prénoms',
+        options=dict_prénoms,
+        value=[dict_prénoms[889]['value']],
         multi=True
     ),
     dcc.Graph(
-        id='example-graph',
+        id='graph-fréquences',
+        style={'height': '80vh'}
     )
 ])
 
 
 @app.callback(
-    Output(component_id='example-graph', component_property='figure'),
-    Input(component_id='dropdown-prenoms', component_property='value')
+    Output(component_id='graph-fréquences', component_property='figure'),
+    [Input(component_id='dropdown-prénoms', component_property='value')]
 )
-def update_output_div(input_value):
+def maj_graph(prénoms_selectionnés):
     fig = go.Figure()
-    for prenom_s in input_value:
-        prenom = prenom_s[:-4]
-        if prenom_s[-1]=='♂':
-            sexe = 1
-        else :
-            sexe = 2
-        
-        wanted_mask = (df_nat.preusuel==prenom) & (df_nat.sexe==sexe)
+    for prénom_select in prénoms_selectionnés:
+        masque = df_nat.prénoms_s == prénom_select
         fig.add_trace(
             go.Scatter(
-                x=df_nat[wanted_mask].annais,
-                y = df_nat[wanted_mask].nombre,
-                name=prenom_s,
+                x=df_nat[masque].annais,
+                y=df_nat[masque].nombre,
+                name=prénom_select,
+                text=df_nat[masque].rangs,
                 mode='markers+lines',
-                hovertemplate='Année : %{x}<br>Nombre : %{y}'))
-
+                hovertemplate='Année : %{x}<br>Nombre : %{y}<br>Rang : <b>%{text}ème</b>'))
     return fig
 
 
