@@ -12,7 +12,8 @@ import pickle as pkl
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, update_title='Chargement...')
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
+                update_title='Chargement...')
 server = app.server
 
 dict_prénoms = pkl.load(open('data/dict_prenoms.pkl', 'rb'))
@@ -39,9 +40,23 @@ app.layout = html.Div(children=[
     dcc.Graph(
         id='graph-fréquences',
         style={'height': '80vh'},
-        config= {'displayModeBar': False}
-    )
+        config={'displayModeBar': False}
+    ),
+    html.Div(id='bandeau', children=""),
 ])
+
+
+@app.callback(
+    Output(component_id='bandeau', component_property='children'),
+    [Input(component_id='dropdown-prénoms', component_property='value')]
+)
+def maj_bandeau(prénoms_selectionnés):
+    if len(prénoms_selectionnés) == 0:
+        return ""
+    else:
+        masque = df_nat.prénoms_s == prénoms_selectionnés[0]
+        genre = "e" if prénoms_selectionnés[0][-1] == '♀' else ""
+        return f"Il y a {df_nat[masque].nombre.sum()} {prénoms_selectionnés[0]} né{genre}s  en France depuis 1900"
 
 
 @app.callback(
@@ -63,8 +78,9 @@ def maj_graph(prénoms_selectionnés):
         fig.update_layout(
             xaxis=dict(title="Année de naissance"),
             yaxis=dict(title="Nombre de naissances"),
-            )
+        )
     return fig
+
 
 if __name__ == '__main__':
     app.run_server()
