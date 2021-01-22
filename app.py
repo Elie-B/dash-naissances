@@ -12,7 +12,7 @@ import pickle as pkl
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, update_title='Chargement...')
 server = app.server
 
 dict_prénoms = pkl.load(open('data/dict_prenoms.pkl', 'rb'))
@@ -33,11 +33,13 @@ app.layout = html.Div(children=[
         id='dropdown-prénoms',
         options=dict_prénoms,
         value=[dict_prénoms[889]['value']],
+        placeholder="Chercher un prénom",
         multi=True
     ),
     dcc.Graph(
         id='graph-fréquences',
-        style={'height': '80vh'}
+        style={'height': '80vh'},
+        config= {'displayModeBar': False}
     )
 ])
 
@@ -58,8 +60,11 @@ def maj_graph(prénoms_selectionnés):
                 text=df_nat[masque].rangs,
                 mode='markers+lines',
                 hovertemplate='Année : %{x}<br>Nombre : %{y}<br>Rang : <b>%{text}ème</b>'))
+        fig.update_layout(
+            xaxis=dict(title="Année de naissance"),
+            yaxis=dict(title="Nombre de naissances"),
+            )
     return fig
 
-
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
