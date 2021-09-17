@@ -7,7 +7,7 @@ import pickle as pkl
 import numpy as np
 
 resp = urlopen(
-    "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2019_csv.zip")
+    "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2020_csv.zip")
 zipfile = ZipFile(BytesIO(resp.read()))
 df_nat = pd.read_csv(zipfile.open(zipfile.namelist()[0]), ';')
 
