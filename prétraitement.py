@@ -7,7 +7,7 @@ import pickle as pkl
 import numpy as np
 
 resp = urlopen(
-    "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2020_csv.zip")
+    "https://www.insee.fr/fr/statistiques/fichier/2540004/nat2021_csv.zip")
 zipfile = ZipFile(BytesIO(resp.read()))
 df_nat = pd.read_csv(zipfile.open(zipfile.namelist()[0]), ';')
 
@@ -20,15 +20,19 @@ df_nat['prénoms_s'] = [str(df_nat.preusuel.iloc[i])+' - ♂' if df_nat.sexe.ilo
 
 # Ajout du rang du prénom :
 df_nat["rangs"] = 1
-for année in df_nat.annais.unique():
-    if not np.isnan(année):
-        for sexe in [1, 2]:
-            masque_sexe = df_nat['sexe'] == sexe
-            masque_année = df_nat['annais'] == année
-            df_année = df_nat[masque_année & masque_sexe]
-            rangs = df_année.nombre.rank(method='min', ascending=False)
-            df_nat.loc[masque_année & masque_sexe, 'rangs'] = rangs
+# Suppression des années NaN 
+df_nat = df_nat[df_nat.annais.notna()]
+df_nat.reset_index(drop=True,inplace=True)
 
+for année in df_nat.annais.unique():
+    for sexe in [1, 2]:
+        masque_sexe = df_nat['sexe'] == sexe
+        masque_année = df_nat['annais'] == année
+        df_année = df_nat[masque_année & masque_sexe]
+        rangs = df_année.nombre.rank(method='min', ascending=False)
+        df_nat.loc[masque_année & masque_sexe, 'rangs'] = rangs
+
+#df_nat[["annais","nombre","rangs"]]=df_nat[["annais","nombre","rangs"]].astype(np.float32)
 df_léger = df_nat.drop(columns=['sexe', 'preusuel'])
 
 df_léger.to_feather('data/df_nat.feather')
