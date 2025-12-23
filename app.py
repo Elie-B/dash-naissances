@@ -1,9 +1,6 @@
-import os
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
@@ -33,7 +30,7 @@ app.layout = html.Div(children=[
     dcc.Dropdown(
         id='dropdown-prénoms',
         options=dict_prénoms,
-        value=[dict_prénoms[888]['value']],
+        value=[dict_prénoms[1207]['value'],dict_prénoms[14140]['value']],
         placeholder="Chercher un prénom",
         multi=True
     ),
@@ -56,7 +53,7 @@ def maj_bandeau(prénoms_selectionnés):
     else:
         masque = df_nat.prénoms_s == prénoms_selectionnés[0]
         genre = "e" if prénoms_selectionnés[0][-1] == '♀' else ""
-        return f"Il y a {df_nat[masque].nombre.sum()} {prénoms_selectionnés[0]} né{genre}s  en France depuis 1900"
+        return f"Il y a {df_nat[masque].valeur.sum()} {prénoms_selectionnés[0]} né{genre}s  en France depuis 1900"
 
 
 @app.callback(
@@ -69,8 +66,8 @@ def maj_graph(prénoms_selectionnés):
         masque = df_nat.prénoms_s == prénom_select
         fig.add_trace(
             go.Scatter(
-                x=df_nat[masque].annais,
-                y=df_nat[masque].nombre,
+                x=df_nat[masque].periode,
+                y=df_nat[masque].valeur,
                 name=prénom_select,
                 text=df_nat[masque].rangs,
                 mode='markers+lines',
