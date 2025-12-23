@@ -1,6 +1,6 @@
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 import pandas as pd
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
@@ -80,4 +80,4 @@ def maj_graph(prénoms_selectionnés):
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run()
